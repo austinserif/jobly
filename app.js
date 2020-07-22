@@ -8,6 +8,10 @@ const morgan = require("morgan");
 
 const app = express();
 
+// include companies routes and declare with '/companies' prefix
+const companies = require('./routes/companies');
+app.use('/companies', companies);
+
 app.use(express.json());
 
 // add logging system
