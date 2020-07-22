@@ -41,4 +41,16 @@ function sqlForPartialUpdate(table, items, key, id) {
   return { query, values };
 }
 
-module.exports = sqlForPartialUpdate;
+/** mockParams is the set of fake parameters used to test sqlForPartialUpdate */
+const mockParams = {
+  table: "addresses",
+  items: {
+    city: "Portland",
+    state: "Oregon"},
+  key: "id",
+  id: 1
+}
+
+module.exports = {
+  sqlForPartialUpdate,
+  mockParams};
