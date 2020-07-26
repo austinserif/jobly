@@ -137,3 +137,7 @@ describe("GET /companies", function() {
         expect(response.body.message).toBe("Bad Request: max_employee query string parameter must be greater than min_employee."); 
     });
 });
+
+afterAll(function() {
+    db.end();
+});

@@ -27,3 +27,8 @@ describe('Company Class string-builder helper methods', function() {
         expect(employeeString).toBe(expectedEmployeesString);
     });
 });
+
+afterAll(function() {
+    const db = Company.returnDB();
+    db.end();
+});

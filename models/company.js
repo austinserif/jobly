@@ -14,6 +14,11 @@ class Company {
         this.logo_url;
     }
 
+    /** return instance of db client */
+    static returnDB() {
+        return db;
+    }
+
     /** Return part of a valid SQL "WHERE statement" as a string containg the passed valued. It should assert 
      * assert that 'name 
      * 
@@ -87,7 +92,7 @@ class Company {
             currIndex++;
         }
 
-        const sqlString = `SELECT handle, name FROM companies WHERE (${whereString});`;
+        const sqlString = `SELECT handle, name FROM companies WHERE (${whereString});`; //**NOTE** changing format of this string will upset tests!
         
         return { sqlString, vals };
     }
@@ -103,7 +108,7 @@ class Company {
         //if options obj is empty go ahead and return all results from companies table    
 
         if (typeof(options) === 'undefined' || !Object.keys(options).length) {
-            const result = await db.query('SELECT handle, name FROM companies;');
+            const result = await db.query('SELECT handle, name FROM companies;')
             return {companies: result.rows};
         }
 

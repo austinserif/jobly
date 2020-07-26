@@ -86,3 +86,7 @@ describe('Company.get integration tests', function() {
         });
     });
 });
+
+afterAll(function() {
+    db.end();
+});
