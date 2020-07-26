@@ -8,7 +8,7 @@ const morgan = require("morgan");
 
 const app = express();
 
-// include companies routes and declare with '/companies' prefix
+// include routes from ./routes/companies.js and instantiate with '/companies' prefix
 const companies = require('./routes/companies');
 app.use('/companies', companies);
 
