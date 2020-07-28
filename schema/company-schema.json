@@ -1,0 +1,71 @@
+{
+    "default": {},
+    "description": "The root schema comprises the entire JSON document.",
+    "examples": [
+        {
+            "handle": "apple",
+            "name": "Apple Computer, Inc",
+            "num_employees": 1234,
+            "description": "Apple is a manufacturer of computer hardware and software",
+            "logo_url": "https://www.apple.com/"
+        }
+    ],
+    "required": [
+        "handle",
+        "name"
+    ],
+    "title": "The root schema",
+    "properties": {
+        "handle": {
+            "$id": "#/properties/handle",
+            "type": "string",
+            "title": "The handle schema",
+            "description": "",
+            "default": "",
+            "examples": [
+                "apple"
+            ]
+        },
+        "name": {
+            "$id": "#/properties/name",
+            "type": "string",
+            "title": "The name schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": "",
+            "examples": [
+                "Apple Computer, Inc"
+            ]
+        },
+        "num_employees": {
+            "$id": "#/properties/num_employees",
+            "type": "integer",
+            "title": "The num_employees schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": 0,
+            "examples": [
+                1234
+            ]
+        },
+        "description": {
+            "$id": "#/properties/description",
+            "type": "string",
+            "title": "The description schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": "",
+            "examples": [
+                "Apple is a manufacturer of computer hardware and software"
+            ]
+        },
+        "logo_url": {
+            "$id": "#/properties/logo_url",
+            "type": "string",
+            "title": "The logo_url schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": "",
+            "examples": [
+                "https://www.apple.com/"
+            ]
+        }
+    },
+    "additionalProperties": true
+}
