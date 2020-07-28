@@ -8,14 +8,16 @@ const morgan = require("morgan");
 
 const app = express();
 
-// include routes from ./routes/companies.js and instantiate with '/companies' prefix
-const companies = require('./routes/companies');
-app.use('/companies', companies);
-
 app.use(express.json());
+
+app.use(express.urlencoded({extended: true}));
 
 // add logging system
 app.use(morgan("tiny"));
+
+// include routes from ./routes/companies.js and instantiate with '/companies' prefix
+const companies = require('./routes/companies');
+app.use('/companies', companies);
 
 /** 404 handler */
 
