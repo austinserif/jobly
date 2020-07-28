@@ -1,5 +1,8 @@
+//Company Model file
+
 const db = require('../db');
 const ExpressError = require('../helpers/expressError');
+const { sqlForPartialUpdate } = require('../helpers/partialUpdate');
 
 /** class specification for Company object instance, which is a model for 
  * the database table "companies". This class defines five attributes,
@@ -117,6 +120,117 @@ class Company {
         const result = await db.query(sqlString, vals);
 
         return {companies: result.rows};
+    }
+
+    /** given handle, return single company
+     *      --> {company: {handle <string>, name <string>, num_employees <integer>, description <string>, logo_url <string>}}
+     */
+    static async getByHandle(handle) {
+        try {
+
+            const result = await db.query(`
+                SELECT *
+                FROM companies
+                WHERE handle=$1`, [handle]);
+
+            if (result.rows.length === 0) {
+                throw new ExpressError(`No company found with handle "${handle}"`, 400);
+            }
+            return {company: result.rows[0]}
+
+        } catch(err) {
+            throw err;
+        }
+    }
+
+    /** given an integer, function returns a parameterized query string of commensurate length.
+     *     --> '$1, $2, $3, $4, ...' <string>
+    */
+    static parameterizedString(num) {
+        let string = '';
+        for (let i=1; i<=num; i++) {
+            string += `$${i}`;
+            if (i!=num) {
+                string+=`, `;
+            }
+        }
+        return string
+    }
+
+    /** expects */
+    static async new(newCo) {
+        const filteredArr = Object.entries(newCo).filter(function(val, index) {
+            if (val[1]) {
+                return [val[0], val[1]];
+            }
+        });
+
+        const parameterizedString = Company.parameterizedString(filteredArr.length);
+        const tableVars = [].concat(...filteredArr.map(x => x[0]));
+        const parameterizedArray = [].concat(...filteredArr.map(x => x[1]));
+
+        try {
+
+            const result = await db.query(`
+                INSERT INTO companies (${tableVars.toString()})
+                VALUES (${parameterizedString})
+                RETURNING *`, parameterizedArray);
+            return {company: result.rows[0]};  
+
+        } catch(err) {
+            if (err.message === `duplicate key value violates unique constraint "companies_pkey"`) {
+                throw new ExpressError(`Company with handle: "${parameterizedArray[0]}" already exists`, 400);
+            } else {
+                throw new ExpressError(err.message, err.status);
+            }
+        }
+    }
+
+    /** If the passed handle exists, update the corresponding company in database 
+     * with information contained in updateObj. Return object containing data
+     * from the updated company.
+     * 
+     *      --> {company: {handle <string>, name <string>, num_employees <integer>, description <string>, logo_url <string>}}
+    * 
+    */
+    static async update(handle, updateObj) {
+        try {
+            const table = `companies`;
+            const items = updateObj;
+            const key = `handle`;
+            const id = handle;
+
+            const { query, values } = sqlForPartialUpdate(table, items, key, id);
+            const result = await db.query(query, values);
+
+            if (!result.rowCount) {
+                throw new ExpressError(`No company found with handle "${id}"`, 400);
+            }
+            return {company: result.rows[0]}
+
+        } catch(err) {
+            throw err;
+        }
+    }
+
+    /** If the passed handle exists, delete corresponding company and information from
+     * the database and return an object containing the deleted information.
+     * 
+     *      --> {deleted: {company: {handle <string>, name <string>, num_employees <integer>, description <string>, logo_url <string>}}}
+     */
+    static async delete(handle) {
+        try {
+            const result = await db.query(`
+                DELETE FROM companies
+                WHERE handle=$1
+                RETURNING *`, [handle]);
+            if (!result.rowCount) {
+                throw new ExpressError(`No company found with handle "${handle}"`, 400)
+            }
+            return {message: "Company deleted"};
+        } catch(err) {
+            throw err;
+        }
     }
 }
 

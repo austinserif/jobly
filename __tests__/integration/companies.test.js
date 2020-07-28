@@ -138,6 +138,152 @@ describe("GET /companies", function() {
     });
 });
 
+describe("POST /companies", function() {
+    test("create a new company", async function() {
+
+        const response = await request(app)
+            .post(`/companies`)
+            .send({
+                handle: "newCo", 
+                name: "New Company, Inc", 
+                num_employees: 100, 
+                description: "This is a new company!", 
+                logo_url: "https://www.newcompany.co/"    
+            });
+
+        expect(response.statusCode).toBe(201);
+
+        expect(response.body).toEqual({
+            company: {
+                handle: "newCo", 
+                name: "New Company, Inc",
+                num_employees: 100, 
+                description: "This is a new company!", 
+                logo_url: "https://www.newcompany.co/"
+            }
+        });
+    });
+
+    test("create a new company with partial information", async function() {
+
+        const response = await request(app)
+            .post(`/companies`)
+            .send({
+                handle: "newCo", 
+                name: "New Company, Inc", 
+                num_employees: 100 
+            });
+
+        expect(response.statusCode).toBe(201);
+
+        expect(response.body).toEqual({
+            company: {
+                handle: "newCo", 
+                name: "New Company, Inc",
+                num_employees: 100, 
+                description: null, 
+                logo_url: null
+            }
+        });
+    });
+
+    test("test error on creating a new company that already exists", async function() {
+        const response = await request(app)
+            .post(`/companies`)
+            .send({
+                handle: "nike", 
+                name: "Nike, Inc", 
+                num_employees: 3000, 
+                description: "Designer, manufacturer, and vendor of athletic shoes", 
+                logo_url: "https://nike-logo-url.com/"    
+            });
+
+        expect(response.statusCode).toBe(400);
+        expect(response.body.message).toBe('Company with handle: "nike" already exists');
+        console.log(response.body);
+
+    });
+});
+
+describe('tests for GET /companies/:handle', function() {
+    test('test that single company with data is returned given its handle', async function() {
+        const response = await request(app)
+            .get('/companies/apple');
+
+        expect(response.statusCode).toBe(200);
+        expect(response.body).toEqual({
+            company: {
+                handle: 'apple',
+                name: 'Apple Computer, Inc',
+                num_employees: 100000,
+                description: 'Manufacturer of computer hardware and software',
+                logo_url: 'https://apple-logo-url.com/'
+            }
+        });
+    });
+
+    test('test error response for company handle that does not exist', async function() {
+        const response = await request(app)
+            .get('/companies/pear');
+
+        expect(response.statusCode).toBe(400);
+        expect(response.body.message).toBe('No company found with handle "pear"');
+    });
+});
+
+
+describe('tests for PATCH /companies/:handle', function() {
+    test('update single listing', async function() {
+        const response = await request(app)
+            .patch('/companies/nike')
+            .send({
+                description: 'The nike description has changed!'
+            });
+
+        expect(response.statusCode).toBe(200);
+        expect(response.body).toEqual({
+            company: { 
+                handle: "nike", 
+                name: "Nike, Inc", 
+                num_employees: 30000, 
+                description: "The nike description has changed!", 
+                logo_url: "https://nike-logo-url.com/" 
+            }
+        });
+    });
+
+    test('test error response for attempted update of listing that doesnt exist', async function() {
+        const response = await request(app)
+            .patch('/companies/pear')
+            .send({
+                description: 'this shouldnt be read anyways, so it doesnt matter!'
+            });
+
+        expect(response.statusCode).toBe(400);
+        expect(response.body.message).toBe('No company found with handle "pear"');
+    });
+});
+
+describe('test DELETE /companies/:handle', function() {
+    test('test that a company can be deleted', async function() {
+        const response = await request(app)
+            .delete('/companies/apple');
+        
+        expect(response.statusCode).toBe(200);
+        expect(response.body).toEqual({
+            message: "Company deleted"
+        });
+    });
+
+    test('test error response when handle is invalid', async function() {
+        const response = await request(app)
+            .delete('/companies/pear');
+
+            expect(response.statusCode).toBe(400);
+            expect(response.body.message).toBe(`No company found with handle "pear"`);
+    });
+});
+
 afterAll(function() {
     db.end();
 });

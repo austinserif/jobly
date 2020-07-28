@@ -28,6 +28,13 @@ describe('Company Class string-builder helper methods', function() {
     });
 });
 
+describe('Company Class Post helper methods', function() {
+    test('this is a filler for now', function() {
+        expect(!true).toBe(false);
+    });
+});
+
+
 afterAll(function() {
     const db = Company.returnDB();
     db.end();

@@ -87,6 +87,36 @@ describe('Company.get integration tests', function() {
     });
 });
 
+describe('Company.new integration tests', function() {
+
+    test('test parameterizedString helper method', async function() {
+        const result = Company.parameterizedString(4);
+        expect(result).toBe('$1, $2, $3, $4');
+    });
+
+    test('test the creation of a new company', async function() {
+        const newCompany = {
+            handle: "newCo", 
+            name: "New Company, Inc", 
+            num_employees: 100, 
+            description: "This is a new company!", 
+            logo_url: "https://www.newcompany.co/"
+        };
+
+        const result = await Company.new(newCompany);
+
+        expect(result).toEqual({
+            company: {
+                handle: "newCo", 
+                name: "New Company, Inc", 
+                num_employees: 100, 
+                description: "This is a new company!", 
+                logo_url: "https://www.newcompany.co/"
+            }
+        });
+    });
+});
+
 afterAll(function() {
     db.end();
 });
