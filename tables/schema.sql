@@ -1,5 +1,6 @@
 DROP TABLE IF EXISTS jobs;
 DROP TABLE IF EXISTS companies;
+DROP TABLE IF EXISTS users;
 
 CREATE TABLE companies(
     handle text PRIMARY KEY,
@@ -20,4 +21,14 @@ CREATE TABLE jobs(
         FOREIGN KEY(company_handle)
             REFERENCES companies(handle)
                 ON DELETE CASCADE
+);
+
+CREATE TABLE users(
+    username text PRIMARY KEY,
+    password text NOT NULL,
+    first_name text NOT NULL,
+    last_name text NOT NULL,
+    email text UNIQUE NOT NULL,
+    photo_url text,
+    is_admin boolean DEFAULT false
 );
