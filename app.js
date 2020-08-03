@@ -18,8 +18,10 @@ app.use(morgan("tiny"));
 // include routes from ./routes/companies.js and instantiate with '/companies' prefix
 const companies = require('./routes/companies');
 const jobs = require('./routes/jobs');
+const users = require('./routes/users');
 app.use('/companies', companies);
 app.use('/jobs', jobs);
+app.use('/users', users);
 
 /** 404 handler */
 

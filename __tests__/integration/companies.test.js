@@ -8,6 +8,7 @@ const db = require("../../db");
  *  instruction: insert mock data into table
  */
 beforeEach(async function() {
+    await db.query("DELETE FROM jobs");
     await db.query("DELETE FROM companies");
     await db.query(`
         INSERT INTO companies
@@ -16,6 +17,34 @@ beforeEach(async function() {
             ('nike', 'Nike, Inc', 30000, 'Designer, manufacturer, and vendor of athletic shoes', 'https://nike-logo-url.com/'),
             ('apple', 'Apple Computer, Inc', 100000, 'Manufacturer of computer hardware and software', 'https://apple-logo-url.com/'),
             ('sans-serif-labs', 'sans-serif, LLC', 1, 'Freelance Goon', 'https://sans-serif-logo-url.com/')
+    `);
+    await db.query(`
+        INSERT INTO jobs
+            (title, salary, equity, company_handle)
+        VALUES
+            ('software engineer 1', 80000.0, 0.001, 'apple')
+        RETURNING id;
+    `);
+
+    await db.query(`
+        INSERT INTO jobs
+            (title, salary, equity, company_handle)
+        VALUES
+            ('software engineer 2', 100000.0, 0.005, 'apple');
+    `);
+    
+    await db.query(`
+        INSERT INTO jobs
+            (title, salary, equity, company_handle)
+        VALUES
+            ('CEO', 800000.0, 0.99, 'sans-serif-labs');
+    `)
+
+    await db.query(`
+        INSERT INTO jobs
+            (title, salary, equity, company_handle)
+        VALUES
+            ('designer', 90000.0, 0.003, 'nike');
     `);
 });
 
@@ -217,7 +246,17 @@ describe('tests for GET /companies/:handle', function() {
                 name: 'Apple Computer, Inc',
                 num_employees: 100000,
                 description: 'Manufacturer of computer hardware and software',
-                logo_url: 'https://apple-logo-url.com/'
+                logo_url: 'https://apple-logo-url.com/',
+                jobs: [
+                    {
+                        company_handle: "apple",
+                        title: "software engineer 2",
+                    },
+                    {
+                        company_handle: "apple",
+                        title: "software engineer 1",
+                    }
+                ]
             }
         });
     });

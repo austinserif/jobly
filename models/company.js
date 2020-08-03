@@ -100,6 +100,17 @@ class Company {
         return { sqlString, vals };
     }
 
+    /** subQuery returns an array of jobs for a given company handle */
+    // static async subQuery(handle) {
+    //     const result = await db.query(`
+    //         SELECT title, company_handle
+    //         FROM jobs
+    //         WHERE company_handle = $1
+    //     `, [handle]);
+    //     const jobs = [ result.rows ];
+    //     return jobs;
+    // }
+
     /** check options object for parameters to consider, then retrieve list of companies from 
      * database that meet parameter specifications. Return JSON containing a list of companies.
      *      --> {companies: [{handle <string>, name <string>}, ...]}
@@ -111,7 +122,7 @@ class Company {
         //if options obj is empty go ahead and return all results from companies table    
 
         if (typeof(options) === 'undefined' || !Object.keys(options).length) {
-            const result = await db.query('SELECT handle, name FROM companies;')
+            const result = await db.query('SELECT handle, name FROM companies;');
             return {companies: result.rows};
         }
 
@@ -127,7 +138,6 @@ class Company {
      */
     static async getByHandle(handle) {
         try {
-
             const result = await db.query(`
                 SELECT *
                 FROM companies
@@ -136,7 +146,16 @@ class Company {
             if (result.rows.length === 0) {
                 throw new ExpressError(`No company found with handle "${handle}"`, 400);
             }
-            return {company: result.rows[0]}
+
+            const jobs_result = await db.query(`
+                SELECT title, company_handle
+                FROM jobs
+                WHERE company_handle=$1
+                ORDER BY date_posted desc;`, [handle]);
+            const {name, num_employees, logo_url, description} = result.rows[0];
+            const jobData = jobs_result.rows;
+            
+            return {company: {handle, name, logo_url, num_employees, description, jobs: jobData}}
 
         } catch(err) {
             throw err;
