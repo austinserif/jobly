@@ -71,7 +71,7 @@ afterEach(async function() {
 */
 describe("GET /companies", function() {
     test("retrieve a list of all companies", async function() {
-        const response = await request(app).get('/companies/')
+        const response = await request(app).get('/companies');
         
         expect(response.statusCode).toBe(200);
         expect(response.body).toEqual({

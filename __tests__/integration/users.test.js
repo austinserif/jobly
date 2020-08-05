@@ -2,7 +2,10 @@ process.env.NODE_ENV = "test";
 const request = require("supertest");
 const app = require("../../app");
 const db = require("../../db");
-let firstusername;
+const bcrypt = require('bcrypt');
+const { BCRYPT_WORK_FACTOR, SECRET_KEY } = require('../../config');
+const jwt = require('jsonwebtoken');
+let testUserToken;
 /** define instructions to be executed before each test is run
  *  instruction: delete all data in the companies table (this is a redundancy)
  *  instruction: insert mock data into table
@@ -48,12 +51,20 @@ beforeEach(async function() {
             ('designer', 90000.0, 0.003, 'nike');
     `);
 
-    await db.query(`
+    const salt = await bcrypt.genSalt(Number(BCRYPT_WORK_FACTOR));
+    const hashedPassword = await bcrypt.hash("secret", salt);
+    const result = await db.query(`
         INSERT INTO users
             (username, first_name, last_name, password, email, photo_url)
         VALUES 
-            ('firstTester', 'first', 'tester', 'fakePW', 'fakie@faker.com', 'https://photobooth.com');
-    `);
+            ('firstTester', 'first', 'tester', $1, 'fakie@faker.com', 'https://photobooth.com')
+        RETURNING username, is_admin;
+    `, [hashedPassword]);
+
+    const { username, is_admin } = result.rows[0];
+    const testUser = {username, is_admin};
+    testUserToken = jwt.sign(testUser, SECRET_KEY);
+    console.log(testUserToken);
 });
 
 /** define instructions to be executed after each test is run
@@ -65,52 +76,13 @@ afterEach(async function() {
     await db.query("DELETE FROM companies;");
 });
 
-
-describe('test POST /users', function() {
-    test('test post new user', async function() {
-        const response = await request(app)
-            .post('/users')
-            .send({
-                username: 'testUsername',
-                first_name: 'test',
-                last_name: 'username',
-                password: 'thisIsAFakePassword',
-                email: 'this@fakeEmail.com'
-            });
-
-        expect(response.statusCode).toBe(201);
-        expect(response.body).toEqual({
-            user: {
-                username: 'testUsername',
-                first_name: 'test',
-                last_name: 'username',
-                email: 'this@fakeEmail.com'
-            }
-        });
-    });
-
-    test('test error response when username of new user already exist', async function() {
-        const response = await request(app)
-            .post('/users')
-            .send({
-                username: 'firstTester',
-                first_name: 'test',
-                last_name: 'username',
-                password: 'thisIsAFakePassword',
-                email: 'this@fakeEmail.com'
-            });
-
-        expect(response.statusCode).toBe(400);
-        expect(response.body.message).toBe(`User with username firstTester already exists`);
-    });
-});
-
 describe('test GET /users', function() {
     test('should return all users', async function() {
         const response = await request(app)
-            .get('/users');
+            .get('/users')
+            .send({_token: testUserToken});
         
-        expect(response.statusCode).toBe(200);
+        // expect(response.statusCode).toBe(200);
         expect(response.body).toEqual({
             users: [
                 {
@@ -127,7 +99,8 @@ describe('test GET /users', function() {
 describe('test GET /users/:username', function() {
     test('test get user by username', async function() {
         const response = await request(app)
-            .get(`/users/firstTester`);
+            .get(`/users/firstTester`)
+            .send({_token: testUserToken});
 
         expect(response.statusCode).toBe(200);
         expect(response.body).toEqual({
@@ -142,7 +115,7 @@ describe('test GET /users/:username', function() {
 
     test('test error response where no username exists', async function() {
         const response = await request(app)
-            .get(`/users/doesNotExist`);
+            .get(`/users/doesNotExist?_token=${testUserToken}`);
 
         expect(response.statusCode).toBe(400);
         expect(response.body.message).toBe(`No user found with username: doesNotExist`);
@@ -152,7 +125,7 @@ describe('test GET /users/:username', function() {
 describe('test PATCH /users/:username', function() {
     test('test single update', async function() {
         const response = await request(app)
-            .patch(`/users/firstTester`)
+            .patch(`/users/firstTester?_token=${testUserToken}`)
             .send({
                 username: "japple",
                 first_name: "Johnny",
@@ -175,18 +148,19 @@ describe('test PATCH /users/:username', function() {
 describe('test DELETE /users/:username', function() {
     test('test that a user is deleted', async function() {
         const response = await request(app)
-            .delete(`/users/firstTester`);
+            .delete(`/users/firstTester?_token=${testUserToken}`);
 
         expect(response.body).toEqual({
             message: "user deleted"
         });
     });
 
-    test('test error response when username does not exist', async function() {
+    test('test error response when username does not exist --> will return unauthorized because the user doesnt exist so current user cant have access', async function() {
         const response = await request(app)
-            .delete(`/users/doesNotExist`);
+            .delete(`/users/doesNotExist?_token=${testUserToken}`);
 
-        expect(response.body.message).toBe(`No user found with username: doesNotExist`);
+        expect(response.statusCode).toBe(401);
+        expect(response.body.message).toBe(`Unauthorized`);
     });
 });
 
