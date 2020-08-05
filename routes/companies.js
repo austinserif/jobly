@@ -4,6 +4,8 @@ const router = express.Router();
 const Company = require('../models/company');
 const jsonschema = require('jsonschema');
 const companySchema = require('../schema/company-schema.json');
+const { authorize, authorizeAdmin } = require('../middleware/route-protection');
+
 
 /** GET /companies
  *  
@@ -30,7 +32,7 @@ const companySchema = require('../schema/company-schema.json');
  * Noteable Errors:
  *      Throw error if min_employees is > max_employees. 
  */
-router.get('/', async function(request, response, next) {
+router.get('/', authorize, async function(request, response, next) {
     try {
         const { companies } = await Company.get(request.query); //pass params, will be read by Company.get() as an options obj and destructured within function.
         return response.json({companies});
@@ -44,7 +46,7 @@ router.get('/', async function(request, response, next) {
  * Creates a new company and returns JSON including company data.
  *      --> {company: {handle <string>, name <string>, num_employees <integer>, description <string>, logo_url <string>}}
  */
-router.post('/', async function(request, response, next) {
+router.post('/', authorizeAdmin, async function(request, response, next) {
     try {
         //validate request.body
         const result = jsonschema.validate(request.body, companySchema);
@@ -69,7 +71,7 @@ router.post('/', async function(request, response, next) {
  * Return a single company found by its handle.
  *      --> {company: {handle <string>, name <string>, num_employees <integer>, description <string>, logo_url <string>}}
  */
-router.get('/:handle', async function(request, response, next) {
+router.get('/:handle', authorize, async function(request, response, next) {
     try {
         const { handle } = request.params;
         const { company } = await Company.getByHandle(handle);
@@ -88,7 +90,7 @@ router.get('/:handle', async function(request, response, next) {
  *      --> {company: {handle <string>, name <string>, num_employees <integer>, description <string>, logo_url <string>}}
  * 
  */
-router.patch('/:handle', async function(request, response, next) {
+router.patch('/:handle', authorizeAdmin, async function(request, response, next) {
     try {
         const { handle } = request.params;
         const updatedObj = request.body;
@@ -106,7 +108,7 @@ router.patch('/:handle', async function(request, response, next) {
  * 
  *      --> {message: "Company deleted"}
 */
-router.delete('/:handle', async function(request, response, next){
+router.delete('/:handle', authorizeAdmin, async function(request, response, next){
     try {
         const { handle } = request.params;
         const { message } = await Company.delete(handle);

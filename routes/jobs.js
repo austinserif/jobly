@@ -4,15 +4,14 @@ const router = express.Router();
 const Job = require('../models/job');
 const jsonschema = require('jsonschema');
 const jobSchema = require('../schema/job-schema.json');
-
-
+const { authorize, authorizeAdmin } = require('../middleware/route-protection');
 
 
 /**POST /jobs
  * This route creates a new job and returns a new job.
  * It should return JSON of {job: jobData}
  * */
-router.post('/', async function(request, response, next) {
+router.post('/', authorizeAdmin, async function(request, response, next) {
     try {
         //validate request.body
         const result = jsonschema.validate(request.body, jobSchema);
@@ -34,14 +33,13 @@ router.post('/', async function(request, response, next) {
 /**
  * GET /jobs
  * This route should list all the titles and company handles for all jobs, ordered by the most recently posted jobs. It should also allow for the following query string parameters
-*/
-/**
+ * 
 search: If the query string parameter is passed, a filtered list of titles and company handles should be displayed based on the search term and if the job title includes it.
 min_salary: If the query string parameter is passed, titles and company handles should be displayed that have a salary greater than the value of the query string parameter.
 min_equity: If the query string parameter is passed, a list of titles and company handles should be displayed that have an equity greater than the value of the query string parameter.
 It should return JSON of {jobs: [job, ...]}
 */
-router.get('/', async function(request, response, next) {
+router.get('/', authorize, async function(request, response, next) {
     try {
         const { jobs } = await Job.get(request.query);
         return response.json({jobs});
@@ -53,7 +51,7 @@ router.get('/', async function(request, response, next) {
 GET /jobs/[id]
 This route should show information about a specific job including a key of company which is an object that contains all of the information about the company associated with it.
 */
-router.get('/:id', async function(request, response, next) {
+router.get('/:id', authorize, async function(request, response, next) {
     try {
         const { id } = request.params;
         const { job } = await Job.getById(id);
@@ -69,7 +67,7 @@ It should return JSON of {job: jobData}
 PATCH /jobs/[id]
 This route updates a job by its ID and returns an the newly updated job.
 */
-router.patch('/:id', async function(request, response, next) {
+router.patch('/:id', authorizeAdmin, async function(request, response, next) {
     try {
         const { id } = request.params;
         const updatedObj = request.body;
@@ -88,7 +86,7 @@ This route deletes a job and returns a message.
 
 It should return JSON of { message: "Job deleted" }
 */
-router.delete('/:id', async function(request, response, next){
+router.delete('/:id', authorizeAdmin, async function(request, response, next){
     try {
         const { id } = request.params;
         const { message } = await Job.delete(id);

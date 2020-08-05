@@ -8,6 +8,8 @@ const morgan = require("morgan");
 
 const app = express();
 
+const { authenticate } = require('./middleware/route-protection');
+
 app.use(express.json());
 
 app.use(express.urlencoded({extended: true}));
@@ -15,17 +17,22 @@ app.use(express.urlencoded({extended: true}));
 // add logging system
 app.use(morgan("tiny"));
 
-// include routes from ./routes/companies.js and instantiate with '/companies' prefix
+app.use(authenticate);
+
+// include routes from companies.js, jobs.js, users.js, and auth.js; instantiate with prefix
 const companies = require('./routes/companies');
 const jobs = require('./routes/jobs');
 const users = require('./routes/users');
+const auth = require('./routes/auth');
+
+app.use('/', auth);
 app.use('/companies', companies);
 app.use('/jobs', jobs);
 app.use('/users', users);
 
-/** 404 handler */
 
-app.use(function(req, res, next) {
+/** 404 handler */
+app.use(function(request, response, next) {
   const err = new ExpressError("Not Found", 404);
 
   // pass the error to the next piece of middleware
@@ -34,11 +41,11 @@ app.use(function(req, res, next) {
 
 /** general error handler */
 
-app.use(function(err, req, res, next) {
-  res.status(err.status || 500);
+app.use(function(err, request, response, next) {
+  response.status(err.status || 500);
   console.error(err.stack);
 
-  return res.json({
+  return response.json({
     status: err.status,
     message: err.message
   });

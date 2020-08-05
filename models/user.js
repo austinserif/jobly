@@ -3,94 +3,20 @@
 const db = require('../db');
 const ExpressError = require('../helpers/expressError');
 const { sqlForPartialUpdate } = require('../helpers/partialUpdate');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const { SECRET_KEY } = require('../config');
 
 /** class specification for User object instance, which is a model for 
  * the database table "users". This class defines five attributes,
  * in addition to several methods on the class and object. 
  */
+
 class User {
 
     /** return instance of db client */
     static returnDB() {
         return db;
-    }
-
-    /** Return part of a valid SQL "WHERE statement" as a string containg the passed valued. It should assert 
-     * assert that 'name 
-     * 
-     * param: number <Number>
-     */
-    static searchString(index) {
-        // return `name LIKE '%$${index}%'`;
-        return `name LIKE '%' || $${index} || '%'`
-    }
-
-    /** Return part of a valid SQL "WHERE statement" as a string containg the passed value. It should
-     * assert that 'employees >= number'
-     * 
-     * param: number <Number>
-     */
-    static minEmployeesString(index) {
-        return `num_employees >= $${index}`;
-    }
-
-
-    /** Return part of a valid SQL "WHERE statement" as a string containg the passed value. It should
-     * assert that 'employees <= number'
-     * 
-     * param: number <Number>
-     */
-    static maxEmployeesString(index) {
-        return `num_employees <= $${index}`;
-    }
-
-    /** take options obj as an argument, and return JSON contatining a sqlString and arr of values.
-     * 
-     *      --> {sqlString <string>, vals <arr>: [num <integer>, ...]}
-     */
-    static buildQuery(options) {
-        let whereString = '';
-        const { search, min_employees, max_employees } = options;
-
-        if (Number(min_employees > max_employees)) {
-            throw new ExpressError("Bad Request: max_employee query string parameter must be greater than min_employee.", 400);
-        };
-
-        let and = " AND ";
-        let currIndex = 1;
-        const vals = [];
-
-        if (typeof(search) === 'string') {
-            whereString += this.searchString(currIndex);
-            vals.push(search);
-            currIndex++;
-        }
-
-        if (!isNaN(min_employees)) {
-
-            if (whereString.length) {
-                whereString+=and;
-            }
-
-            whereString += this.minEmployeesString(currIndex);
-            vals.push(min_employees);
-            currIndex++;
-        }
-
-        if (!isNaN(max_employees)) {
-
-            if (whereString.length) {
-                whereString+=and;
-            }
-
-            whereString += this.maxEmployeesString(currIndex);
-            vals.push(max_employees);
-            currIndex++;
-        }
-
-        const sqlString = `SELECT username, name FROM users WHERE (${whereString});`; //**NOTE** changing format of this string will upset tests!
-        
-        return { sqlString, vals };
     }
 
     /** Return array of all users.
@@ -145,9 +71,13 @@ class User {
         return string
     }
 
-    /** expects */
-    static async new(newCo) {
-        const filteredArr = Object.entries(newCo).filter(function(val) {
+    /** given newUser object, create user if info is valid and return JWT
+     *      
+     *      --> {token: token}
+     */
+    static async new(newUser) {
+
+        const filteredArr = Object.entries(newUser).filter(function(val) {
             if (val[1]) {
                 return [val[0], val[1]];
             }
@@ -161,9 +91,10 @@ class User {
             const result = await db.query(`
                 INSERT INTO users (${tableVars.toString()})
                 VALUES (${parameterizedString})
-                RETURNING username, first_name, last_name, email;`, parameterizedArray);
+                RETURNING username, is_admin;`, parameterizedArray);
             const user = result.rows[0];
-            return { user };
+            let token = jwt.sign({ user }, SECRET_KEY);
+            return { token };
 
         } catch(err) {
             if (err.message === `duplicate key value violates unique constraint "users_pkey"`) {

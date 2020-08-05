@@ -4,6 +4,9 @@ const router = express.Router();
 const User = require('../models/user');
 const jsonschema = require('jsonschema');
 const userSchema = require('../schema/user-schema.json');
+const bcrypt = require('bcrypt');
+const { BCRYPT_WORK_FACTOR } = require('../config');
+const { authorize, authorizeCertainUser } = require('../middleware/route-protection');
 
 /** GET /users
  *  
@@ -11,7 +14,7 @@ const userSchema = require('../schema/user-schema.json');
  * 
  *      --> {users: [{username <string>, first_name <string>, last_name <string>, email <string>}, ...]}
  */
-router.get('/', async function(request, response, next) {
+router.get('/', authorize, async function(request, response, next) {
     try {
         const { users } = await User.get(); //pass params, will be read by user.get() as an options obj and destructured within function.
         return response.json({users});
@@ -20,12 +23,15 @@ router.get('/', async function(request, response, next) {
     }
 });
 
-/** POST /users
- *  
- * Creates a new user and returns JSON including user data.
- * 
- *      --> {user: {username <string>, name <string>, num_employees <integer>, description <string>, logo_url <string>}}
- */
+
+/** POST /users 
+ * create n new user and return JSON Web Token
+ * w/ a payload including values for:
+ * - username
+ * - is_admin
+ *
+ *      --> {token: token}
+*/
 router.post('/', async function(request, response, next) {
     try {
         //validate request.body
@@ -36,9 +42,11 @@ router.post('/', async function(request, response, next) {
           let err = new ExpressError(listOfErrors, 400);
           return next(err);
         }
+        //at this point, username, first_name, last_name, password, and email have been validated as valid entries
+        request.body.password = await bcrypt.hash(request.body.password, BCRYPT_WORK_FACTOR);
 
-        const { user } = await User.new(request.body);
-        return response.status(201).json({user});
+        const { token } = await User.new(request.body);
+        return response.status(201).json({token});
 
     } catch(err) {
         return next(err);
@@ -51,7 +59,7 @@ router.post('/', async function(request, response, next) {
  * Return a single user found by its username.
  *      --> {user: {username <string>, name <string>, num_employees <integer>, description <string>, logo_url <string>}}
  */
-router.get('/:username', async function(request, response, next) {
+router.get('/:username', authorize, async function(request, response, next) {
     try {
         const { username } = request.params;
         const { user } = await User.getByUsername(username);
@@ -70,7 +78,7 @@ router.get('/:username', async function(request, response, next) {
  *      --> {user: {username <string>, name <string>, num_employees <integer>, description <string>, logo_url <string>}}
  * 
  */
-router.patch('/:username', async function(request, response, next) {
+router.patch('/:username', authorizeCertainUser, async function(request, response, next) {
     try {
         const { username } = request.params;
         const updatedObj = request.body;
@@ -88,7 +96,7 @@ router.patch('/:username', async function(request, response, next) {
  * 
  *      --> {message: "user deleted"}
 */
-router.delete('/:username', async function(request, response, next){
+router.delete('/:username', authorizeCertainUser, async function(request, response, next){
     try {
         const { username } = request.params;
         const { message } = await User.delete(username);
