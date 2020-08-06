@@ -2,12 +2,17 @@ process.env.NODE_ENV = "test";
 const request = require("supertest");
 const app = require("../../app");
 const db = require("../../db");
+const bcrypt = require('bcrypt');
+const { SECRET_KEY, BCRYPT_WORK_FACTOR } = require('../../config');
+const jwt = require('jsonwebtoken');
+let testUserToken;
 
 /** define instructions to be executed before all tests are run
  *  instruction: delete all data in the companies table (this is a redundancy)
  *  instruction: insert mock data into table
  */
 beforeEach(async function() {
+    await db.query(`DELETE FROM users`);
     await db.query("DELETE FROM jobs");
     await db.query("DELETE FROM companies");
     await db.query(`
@@ -46,12 +51,29 @@ beforeEach(async function() {
         VALUES
             ('designer', 90000.0, 0.003, 'nike');
     `);
+
+    const salt = await bcrypt.genSalt(Number(BCRYPT_WORK_FACTOR));
+    const hashedPassword = await bcrypt.hash("secret", salt);
+    const result = await db.query(`
+        INSERT INTO users
+            (username, first_name, last_name, password, email, photo_url, is_admin)
+        VALUES 
+            ('firstTester', 'first', 'tester', $1, 'fakie@faker.com', 'https://photobooth.com', true)
+        RETURNING username, is_admin;
+    `, [hashedPassword]);
+
+    const { username, is_admin } = result.rows[0];
+    const testUser = {username, is_admin};
+    testUserToken = jwt.sign(testUser, SECRET_KEY);
+    console.log(testUserToken);
 });
 
 /** define instructions to be executed after all tests are run
  *  instruction: delete all data in the companies table (this is a redundancy)
  */
 afterEach(async function() {
+    await db.query(`DELETE FROM users`);
+    await db.query("DELETE FROM jobs");
     await db.query("DELETE FROM companies");
 });
 
@@ -71,9 +93,9 @@ afterEach(async function() {
 */
 describe("GET /companies", function() {
     test("retrieve a list of all companies", async function() {
-        const response = await request(app).get('/companies');
+        const response = await request(app).get(`/companies?_token=${testUserToken}`);
         
-        expect(response.statusCode).toBe(200);
+        // expect(response.statusCode).toBe(200);
         expect(response.body).toEqual({
             companies: [
                 {handle: "nike", name: "Nike, Inc"},
@@ -85,7 +107,7 @@ describe("GET /companies", function() {
 
     test("retrieve a list of all companies whose name includes the letter 'i'", async function() {
         const response = await request(app)
-            .get(`/companies/?search=i`);
+            .get(`/companies/?search=i&_token=${testUserToken}`);
 
         expect(response.statusCode).toBe(200);
         expect(response.body).toEqual({
@@ -98,7 +120,7 @@ describe("GET /companies", function() {
 
     test("retrieve a list of all companies where min_employees is equal to 2", async function() {
         const response = await request(app)
-            .get(`/companies/?min_employees=2`);
+            .get(`/companies/?min_employees=2&_token=${testUserToken}`);
         
         expect(response.statusCode).toBe(200);
         expect(response.body).toEqual({
@@ -111,7 +133,8 @@ describe("GET /companies", function() {
 
     test("retrieve a list of all companies where max_employees is equal to 50000", async function() {
         const response = await request(app)
-            .get(`/companies?max_employees=50000`);
+            .get(`/companies?max_employees=50000`)
+            .send({_token: testUserToken});
 
         expect(response.statusCode).toBe(200);
         expect(response.body).toEqual({
@@ -124,7 +147,8 @@ describe("GET /companies", function() {
 
     test("retrieve a list of all companies where min_employees is 2 and max_employees is 50000", async function() {
         const response = await request(app)
-            .get(`/companies?max_employees=50000&min_employees=2`);
+            .get(`/companies?max_employees=50000&min_employees=2`)
+            .send({_token: testUserToken});
 
         expect(response.statusCode).toBe(200);
         expect(response.body).toEqual({
@@ -137,7 +161,7 @@ describe("GET /companies", function() {
     test(`retrieve a list of all companies where min_emplyees is equal to max_employees, and there is no 
           company in the database with exactly that number of employees`, async function() {
         const response = await request(app)
-            .get(`/companies?max_employees=50&min_employees=50`);
+            .get(`/companies?max_employees=50&min_employees=50&_token=${testUserToken}`);
 
         expect(response.statusCode).toBe(200); //best practice question: better to return 204 or empty array?
         expect(response.body).toEqual({
@@ -148,7 +172,7 @@ describe("GET /companies", function() {
     test(`retrieve a list of all companies where min_emplyees is equal to max_employees, and there IS 
           a company in the database with exactly that number of employees`, async function() {
         const response = await request(app)
-            .get(`/companies?max_employees=30000&min_employees=30000`);
+            .get(`/companies?max_employees=30000&min_employees=30000&_token=${testUserToken}`);
 
         expect(response.statusCode).toBe(200);
         expect(response.body).toEqual({
@@ -160,7 +184,7 @@ describe("GET /companies", function() {
 
     test("test error result where min_employees is > max_employees", async function() {
         const response = await request(app)
-            .get(`/companies?max_employees=10&min_employees=40`);
+            .get(`/companies?max_employees=10&min_employees=40&_token=${testUserToken}`);
 
         expect(response.statusCode).toBe(400);
         expect(response.body.message).toBe("Bad Request: max_employee query string parameter must be greater than min_employee."); 
@@ -171,7 +195,7 @@ describe("POST /companies", function() {
     test("create a new company", async function() {
 
         const response = await request(app)
-            .post(`/companies`)
+            .post(`/companies?_token=${testUserToken}`)
             .send({
                 handle: "newCo", 
                 name: "New Company, Inc", 
@@ -196,7 +220,7 @@ describe("POST /companies", function() {
     test("create a new company with partial information", async function() {
 
         const response = await request(app)
-            .post(`/companies`)
+            .post(`/companies?_token=${testUserToken}`)
             .send({
                 handle: "newCo", 
                 name: "New Company, Inc", 
@@ -218,7 +242,7 @@ describe("POST /companies", function() {
 
     test("test error on creating a new company that already exists", async function() {
         const response = await request(app)
-            .post(`/companies`)
+            .post(`/companies?_token=${testUserToken}`)
             .send({
                 handle: "nike", 
                 name: "Nike, Inc", 
@@ -237,7 +261,8 @@ describe("POST /companies", function() {
 describe('tests for GET /companies/:handle', function() {
     test('test that single company with data is returned given its handle', async function() {
         const response = await request(app)
-            .get('/companies/apple');
+            .get('/companies/apple')
+            .send({_token: testUserToken});
 
         expect(response.statusCode).toBe(200);
         expect(response.body).toEqual({
@@ -263,7 +288,8 @@ describe('tests for GET /companies/:handle', function() {
 
     test('test error response for company handle that does not exist', async function() {
         const response = await request(app)
-            .get('/companies/pear');
+            .get('/companies/pear')
+            .send({_token: testUserToken});
 
         expect(response.statusCode).toBe(400);
         expect(response.body.message).toBe('No company found with handle "pear"');
@@ -274,7 +300,7 @@ describe('tests for GET /companies/:handle', function() {
 describe('tests for PATCH /companies/:handle', function() {
     test('update single listing', async function() {
         const response = await request(app)
-            .patch('/companies/nike')
+            .patch(`/companies/nike?_token=${testUserToken}`)
             .send({
                 description: 'The nike description has changed!'
             });
@@ -293,7 +319,7 @@ describe('tests for PATCH /companies/:handle', function() {
 
     test('test error response for attempted update of listing that doesnt exist', async function() {
         const response = await request(app)
-            .patch('/companies/pear')
+            .patch(`/companies/pear?_token=${testUserToken}`)
             .send({
                 description: 'this shouldnt be read anyways, so it doesnt matter!'
             });
@@ -306,7 +332,7 @@ describe('tests for PATCH /companies/:handle', function() {
 describe('test DELETE /companies/:handle', function() {
     test('test that a company can be deleted', async function() {
         const response = await request(app)
-            .delete('/companies/apple');
+            .delete(`/companies/apple?_token=${testUserToken}`);
         
         expect(response.statusCode).toBe(200);
         expect(response.body).toEqual({
@@ -316,7 +342,7 @@ describe('test DELETE /companies/:handle', function() {
 
     test('test error response when handle is invalid', async function() {
         const response = await request(app)
-            .delete('/companies/pear');
+            .delete(`/companies/pear?_token=${testUserToken}`);
 
             expect(response.statusCode).toBe(400);
             expect(response.body.message).toBe(`No company found with handle "pear"`);

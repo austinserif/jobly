@@ -73,20 +73,6 @@ afterEach(async function() {
     await db.query("DELETE FROM companies");
 });
 
-describe('Company.get integration tests', function() {
-    test('test get() with no string parameters', async function() {
-        const result = await Company.get();
-        
-        expect(result).toEqual({
-            companies: [
-                {handle: "nike", name: "Nike, Inc"},
-                {handle: "apple", name: "Apple Computer, Inc"},
-                {handle: "sans-serif-labs", name: "sans-serif, LLC"},
-            ]
-        });
-    });
-});
-
 describe('Company.new integration tests', function() {
 
     test('test parameterizedString helper method', async function() {

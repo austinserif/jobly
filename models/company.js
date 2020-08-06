@@ -115,13 +115,11 @@ class Company {
      * database that meet parameter specifications. Return JSON containing a list of companies.
      *      --> {companies: [{handle <string>, name <string>}, ...]}
      * 
-     * Notable Errors:
-     *      ?
      */
     static async get(options) {
         //if options obj is empty go ahead and return all results from companies table    
 
-        if (typeof(options) === 'undefined' || !Object.keys(options).length) {
+        if (Object.values(options).every(val=>(!val))) {
             const result = await db.query('SELECT handle, name FROM companies;');
             return {companies: result.rows};
         }

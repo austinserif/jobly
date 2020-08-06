@@ -41,7 +41,8 @@ It should return JSON of {jobs: [job, ...]}
 */
 router.get('/', authorize, async function(request, response, next) {
     try {
-        const { jobs } = await Job.get(request.query);
+        const { search, min_salary, min_equity } = request.query;
+        const { jobs } = await Job.get({search, min_salary, min_equity});
         return response.json({jobs});
     } catch(err) {
         return next(err);

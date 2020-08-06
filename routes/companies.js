@@ -34,7 +34,8 @@ const { authorize, authorizeAdmin } = require('../middleware/route-protection');
  */
 router.get('/', authorize, async function(request, response, next) {
     try {
-        const { companies } = await Company.get(request.query); //pass params, will be read by Company.get() as an options obj and destructured within function.
+        const { search, min_employees, max_employees } = request.query;
+        const { companies } = await Company.get({search, min_employees, max_employees}); //pass params, will be read by Company.get() as an options obj and destructured within function.
         return response.json({companies});
     } catch(err) {
         return next(err);

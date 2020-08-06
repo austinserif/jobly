@@ -108,8 +108,7 @@ class Job {
      */
     static async get(options) {
         //if options obj is empty go ahead and return all results from companies table    
-
-        if (typeof(options) === 'undefined' || !Object.keys(options).length) {
+        if (Object.values(options).every(val=>(!val))) {
             const result = await db.query('SELECT title, company_handle FROM jobs ORDER BY date_posted desc;');
             const jobsArr = result.rows.map(obj => ({job: obj}))
             return {jobs: jobsArr};
