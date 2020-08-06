@@ -4,28 +4,25 @@ const db = require('../db');
 const ExpressError = require('../helpers/expressError');
 const { sqlForPartialUpdate } = require('../helpers/partialUpdate');
 
-/** class specification for Company object instance, which is a model for 
- * the database table "companies". This class defines five attributes,
- * in addition to several methods on the class and object. 
+
+/** class specification for Company object.
  */
 class Company {
-    constructor() {
-        this.handle;
-        this.name;
-        this.num_employees;
-        this.description;
-        this.logo_url;
-    }
 
-    /** return instance of db client */
+    /** return instance of db client 
+     * 
+     * @returns {Client} - pg database client instance
+    */
     static returnDB() {
         return db;
     }
 
     /** Return part of a valid SQL "WHERE statement" as a string containg the passed valued. It should assert 
-     * assert that 'name 
+     * assert that 'name LIKE '%' || $1 || '%' (if index == 1)
      * 
-     * param: number <Number>
+     * @param {Number} index - index of search parameter in SQL query
+     * 
+     * @returns {String} - substring of SQL "where" statement concatonated to include index
      */
     static searchString(index) {
         // return `name LIKE '%$${index}%'`;
@@ -33,9 +30,11 @@ class Company {
     }
 
     /** Return part of a valid SQL "WHERE statement" as a string containg the passed value. It should
-     * assert that 'employees >= number'
+     * assert that 'employees >= $1' (if index == 1)
      * 
-     * param: number <Number>
+     * @param {Number} index - index of num_employees minimum value parameter in SQL query
+     * 
+     * @returns {String} - substring of SQL "where" statement concatonated to include index
      */
     static minEmployeesString(index) {
         return `num_employees >= $${index}`;
@@ -43,9 +42,11 @@ class Company {
 
 
     /** Return part of a valid SQL "WHERE statement" as a string containg the passed value. It should
-     * assert that 'employees <= number'
+     * assert that 'employees <= $1' (if index == 1)
      * 
-     * param: number <Number>
+     * @param {Number} index - index of num_employees maximum value parameter in SQL query
+     * 
+     * @returns {String} - substring of SQL "where" statement concatonated to include index
      */
     static maxEmployeesString(index) {
         return `num_employees <= $${index}`;
@@ -53,7 +54,12 @@ class Company {
 
     /** take options obj as an argument, and return JSON contatining a sqlString and arr of values.
      * 
-     *      --> {sqlString <string>, vals <arr>: [num <integer>, ...]}
+     * @param {Object} options - object containing potential key-value pairs { search, min_employees, max_employees }
+     * @param {String|undefined} options.search - search keyword
+     * @param {Number|undefined} options.min_employees - minimum num_employee integer value
+     * @param {Number|undefined} options.max_employees - maximum num_employee integer value
+     *      
+     * @returns {Object{String, Array[Number]}} - object containing {sqlString <string>, vals <arr>: [num <integer>, ...]}
      */
     static buildQuery(options) {
         let whereString = '';
@@ -100,20 +106,15 @@ class Company {
         return { sqlString, vals };
     }
 
-    /** subQuery returns an array of jobs for a given company handle */
-    // static async subQuery(handle) {
-    //     const result = await db.query(`
-    //         SELECT title, company_handle
-    //         FROM jobs
-    //         WHERE company_handle = $1
-    //     `, [handle]);
-    //     const jobs = [ result.rows ];
-    //     return jobs;
-    // }
-
-    /** check options object for parameters to consider, then retrieve list of companies from 
-     * database that meet parameter specifications. Return JSON containing a list of companies.
-     *      --> {companies: [{handle <string>, name <string>}, ...]}
+    /** retrieve list of companies in database that meet parameter specifications detailed in the options argument. 
+     * Return JSON containing the list of companies.
+     * 
+     * @param {Object} options - object containing potential key-value pairs { search, min_employees, max_employees }
+     * @param {String|undefined} options.search - search keyword
+     * @param {Number|undefined} options.min_employees - minimum num_employee integer value
+     * @param {Number|undefined} options.max_employees - maximum num_employee integer value
+     *      
+     * @returns {Object{Array[Object{String, String}]}} - object containing {companies: [{handle <string>, name <string>}, ...]}
      * 
      */
     static async get(options) {
@@ -131,8 +132,11 @@ class Company {
         return {companies: result.rows};
     }
 
-    /** given handle, return single company
-     *      --> {company: {handle <string>, name <string>, num_employees <integer>, description <string>, logo_url <string>}}
+    /** given handle, return data for corresponding company (if it exists)
+     * 
+     * @param {String} handle - unique company identification string
+     * 
+     * @returns {Object{Object{String, String, Number, String, String}}} - object containing {company: {handle <string>, name <string>, num_employees <integer>, description <string>, logo_url <string>}}
      */
     static async getByHandle(handle) {
         try {
@@ -161,7 +165,10 @@ class Company {
     }
 
     /** given an integer, function returns a parameterized query string of commensurate length.
-     *     --> '$1, $2, $3, $4, ...' <string>
+     * 
+     * @param {Number} num - number of needed sanitized query string parameters
+     * 
+     * @returns {String} - string like '$1, $2, $3, $4, ...' (if num is >= 4)
     */
     static parameterizedString(num) {
         let string = '';
@@ -174,7 +181,18 @@ class Company {
         return string
     }
 
-    /** expects */
+    /** given newCo object containing company details, commit to database and return details
+     *
+     * @param {Object} newCo - information about a new company as a set of key-value pairs
+     * @param {String} newCo.handle - unique company identification string
+     * @param {String} newCo.name - name of company, not necessarily unique
+     * @param {Number} newCo.num_employees - number of employees at company
+     * @param {String} newCo.description - description of company
+     * @param {String} newCo.logo_url - url for company's logo
+     * 
+     * @returns {Object{Object{String, String, Number, String, String}}} - object containing {company: {handle <string>, name <string>, num_employees <integer>, description <string>, logo_url <string>}}
+     * 
+    */
     static async new(newCo) {
         const filteredArr = Object.entries(newCo).filter(function(val, index) {
             if (val[1]) {
@@ -207,9 +225,17 @@ class Company {
      * with information contained in updateObj. Return object containing data
      * from the updated company.
      * 
-     *      --> {company: {handle <string>, name <string>, num_employees <integer>, description <string>, logo_url <string>}}
-    * 
-    */
+     * @param {String} handle - unique company identification string
+     * @param {Object} updateObj - object containing fields to be updated in company corresponding to handle param
+     * @param {String} updateObj.handle - unique company identification string
+     * @param {String} updateObj.name - name of company, not necessarily unique
+     * @param {Number} updateObj.num_employees - number of employees at company
+     * @param {String} updateObj.description - description of company
+     * @param {String} updateObj.logo_url - url for company's logo
+     * 
+     * @returns {Object{Object{String, String, Number, String, String}}} - object containing {company: {handle <string>, name <string>, num_employees <integer>, description <string>, logo_url <string>}}
+     * 
+     */
     static async update(handle, updateObj) {
         try {
             const table = `companies`;
@@ -231,9 +257,11 @@ class Company {
     }
 
     /** If the passed handle exists, delete corresponding company and information from
-     * the database and return an object containing the deleted information.
+     * the database and return message confirming deletion.
      * 
-     *      --> {deleted: {company: {handle <string>, name <string>, num_employees <integer>, description <string>, logo_url <string>}}}
+     * @param {String} handle - unique company identification string
+     * 
+     * @returns {Object{String}} - object containing {message: "Company deleted"}
      */
     static async delete(handle) {
         try {

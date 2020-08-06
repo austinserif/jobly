@@ -8,13 +8,6 @@ const { sqlForPartialUpdate } = require('../helpers/partialUpdate');
  * the database table "jobs". It defines several static methods.
  */
 class Job {
-    constructor() {
-        this.id;
-        this.title;
-        this.salary;
-        this.equity;
-        this.company_handle;
-    }
 
     /** return instance of db client */
     static returnDB() {
