@@ -1,16 +1,9 @@
-/* Shared config for application; can be req'd many places. */
-
+/** config file */
 require("dotenv").config();
 
 const SECRET_KEY = process.env.SECRET_KEY || "test";
 const BCRYPT_WORK_FACTOR = process.env.BCRYPT_WORK_FACTOR;
 const PORT = +process.env.PORT || 3000;
-
-// database is:
-//
-// - on Heroku, get from env var DATABASE_URL
-// - in testing, 'jobly-test'
-// - else: 'jobly'
 
 let DB_URI;
 
