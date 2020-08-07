@@ -173,11 +173,11 @@ class Job {
 
     /** given newJob object containing job details, commit to database and return details
      *
-     * @param {Object} newCo - information about a new job as a set of key-value pairs
-     * @param {String} newCo.title - job title
-     * @param {Number} newCo.salary - job salary
-     * @param {String} newCo.equity - job equity
-     * @param {String} newCo.company_handle - unique company idefification string
+     * @param {Object} newJob - information about a new job as a set of key-value pairs
+     * @param {String} newJob.title - job title
+     * @param {Number} newJob.salary - job salary
+     * @param {String} newJob.equity - job equity
+     * @param {String} newJob.company_handle - unique company idefification string
      * 
      * @returns {Promise{Object{String, Number, Number, String}}} - object containing {job: {title <string>, salary <float>, equity <float>, company_handle <string>}}
      * 
