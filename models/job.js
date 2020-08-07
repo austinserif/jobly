@@ -4,30 +4,35 @@ const db = require('../db');
 const ExpressError = require('../helpers/expressError');
 const { sqlForPartialUpdate } = require('../helpers/partialUpdate');
 
-/** class specification for Job object instance, which is a model for 
- * the database table "jobs". It defines several static methods.
+/** class specification for Job object.
  */
 class Job {
 
-    /** return instance of db client */
+    /** return instance of db client 
+     *
+     * @returns {Client} - pg database client instance
+    */
     static returnDB() {
         return db;
     }
 
-    /** Return part of a valid SQL "WHERE statement" as a string containg the passed valued. It should assert 
-     * assert that 'name 
+    /** Return part of a valid SQL "WHERE statement" as a string containg the passed valued. It should 
+     * assert that 'name LIKE '%' || $1 || '%' (if index == 1)
      * 
-     * param: number <Number>
+     * @param {Number} index - index of search parameter in SQL query
+     * 
+     * @returns {String} - substring of SQL "where" statement concatonated to include index
      */
     static searchString(index) {
-        // return `name LIKE '%$${index}%'`;
         return `title LIKE '%' || $${index} || '%'`
     }
 
     /** Return part of a valid SQL "WHERE statement" as a string containg the passed value. It should
-     * assert that 'salary >= number'
+     * assert that 'salary >= $1' (if index == 1)
      * 
-     * param: number <Number>
+     * @param {Number} index - index of salary minimum value parameter in SQL query
+     * 
+     * @returns {String} - substring of SQL "where" statement concatonated to include index
      */
     static minSalaryString(index) {
         return `salary >= $${index}`;
@@ -35,9 +40,11 @@ class Job {
 
 
     /** Return part of a valid SQL "WHERE statement" as a string containg the passed value. It should
-     * assert that 'equity <= number'
+     * assert that 'equity >= $1' (if index == 1)
      * 
-     * param: number <Number>
+     * @param {Number} index - index of equity minimum value parameter in SQL query
+     * 
+     * @returns {String} - substring of SQL "where" statement concatonated to include index
      */
     static minEquityString(index) {
         return `equity >= $${index}`;
@@ -45,7 +52,13 @@ class Job {
 
     /** take options obj as an argument, and return JSON contatining a sqlString and arr of values.
      * 
-     *      --> {sqlString <string>, vals <arr>: [num <integer>, ...]}
+     * @param {Object} options - object containing potential key-value pairs { search, min_salary, min_equity }
+     * @param {String|undefined} options.search - search keyword
+     * @param {Number|undefined} options.min_salary - minimum salary integer value
+     * @param {Number|undefined} options.min_equity - maximum equity integer value
+     *      
+     * @returns {Object{String, Array[Number]}} - object containing {sqlString <string>, vals <arr>: [num <integer>, ...]}
+     * 
      */
     static buildQuery(options) {
         let whereString = '';
@@ -92,15 +105,18 @@ class Job {
         return { sqlString, vals };
     }
 
-    /** check options object for parameters to consider, then retrieve list of companies from 
-     * database that meet parameter specifications. Return JSON containing a list of companies.
-     *      --> {companies: [{title <string>, company_handle <string>}, ...]}
+    /** check options object for parameters to consider, then retrieve list of jobs from 
+     * database that meet parameter specifications. Return JSON containing a list of jobs.
      * 
-     * Notable Errors:
-     *      ?
+     * @param {Object} options - object containing potential key-value pairs { search, min_salary, min_equity }
+     * @param {String|undefined} options.search - search keyword
+     * @param {Number|undefined} options.min_salary - minimum salary integer value
+     * @param {Number|undefined} options.min_equity - maximum equity integer value
+     *      
+     * @returns {Promise{Array[Object{String, String}]}} - object containing {jobs: [{title <string>, company_handle <string>}, ...]}
      */
     static async get(options) {
-        //if options obj is empty go ahead and return all results from companies table    
+        //if options obj is empty go ahead and return all results from jobs table    
         if (Object.values(options).every(val=>(!val))) {
             const result = await db.query('SELECT title, company_handle FROM jobs ORDER BY date_posted desc;');
             const jobsArr = result.rows.map(obj => ({job: obj}))
@@ -114,8 +130,11 @@ class Job {
         return {jobs: jobsArr};
     }
 
-    /** given handle, return single company
-     *      --> {company: {handle <string>, name <string>, num_employees <integer>, description <string>, logo_url <string>}}
+    /** given id, return single job
+     * 
+     * @param {Number} id - unique job identification integer
+     * 
+     * @returns {Promise{Object{String, String}}} - object containing {job: {title <string>, salary <float>, equity <float>, company_handle <string>}}
      */
     static async getById(id) {
         try {
@@ -135,7 +154,11 @@ class Job {
     }
 
     /** given an integer, function returns a parameterized query string of commensurate length.
-     *     --> '$1, $2, $3, $4, ...' <string>
+     * 
+     * @param {Number} num - number of needed sanitized query string parameters
+     * 
+     * @returns {String} - string like '$1, $2, $3, $4, ...' (if num is >= 4)
+     * 
     */
    static parameterizedString(num) {
         let string = '';
@@ -148,7 +171,17 @@ class Job {
         return string
     }
 
-    /** expects */
+    /** given newJob object containing job details, commit to database and return details
+     *
+     * @param {Object} newCo - information about a new job as a set of key-value pairs
+     * @param {String} newCo.title - job title
+     * @param {Number} newCo.salary - job salary
+     * @param {String} newCo.equity - job equity
+     * @param {String} newCo.company_handle - unique company idefification string
+     * 
+     * @returns {Promise{Object{String, Number, Number, String}}} - object containing {job: {title <string>, salary <float>, equity <float>, company_handle <string>}}
+     * 
+    */
     static async new(newJob) {
         const filteredArr = Object.entries(newJob).filter(function(val, index) {
             if (val[1]) {
@@ -182,7 +215,15 @@ class Job {
      * with information contained in updateObj. Return object containing data
      * from the updated company.
      * 
-     *      --> {company: {handle <string>, name <string>, num_employees <integer>, description <string>, logo_url <string>}}
+     * @param {String} jobId - unique job identification integer
+     * @param {Object} updateObj - object containing fields to be updated in job corresponding to id param
+     * @param {String} updateObj.id - unique job identification integer
+     * @param {String} updateObj.title - title of job, not necessarily unique
+     * @param {Number} updateObj.salary - job salary
+     * @param {String} updateObj.equity - job equity
+     * @param {String} updateObj.company_handle - unique company identification string
+     * 
+     * @returns {Promise{Object{String, String, Number, String, String}}} - object containing {job: {title <string>, salary <float>, equity <float>, company_handle <string}}
     * 
     */
    static async update(jobId, updateObj) {
@@ -207,10 +248,12 @@ class Job {
         }
     }
 
-    /** If the passed handle exists, delete corresponding company and information from
-     * the database and return an object containing the deleted information.
+    /** If the passed id exists, delete corresponding job and information from
+     * the database and return message confirming deletion.
      * 
-     *      --> {deleted: {company: {handle <string>, name <string>, num_employees <integer>, description <string>, logo_url <string>}}}
+     * @param {Number} id - unique job identification integer
+     * 
+     * @returns {Promise{Object{String}}} - object containing {message: "Job deleted"}
      */
     static async delete(id) {
         try {

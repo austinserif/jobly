@@ -114,12 +114,12 @@ class Company {
      * @param {Number|undefined} options.min_employees - minimum num_employee integer value
      * @param {Number|undefined} options.max_employees - maximum num_employee integer value
      *      
-     * @returns {Object{Array[Object{String, String}]}} - object containing {companies: [{handle <string>, name <string>}, ...]}
+     * @returns {Promise{Array[Object{String, String}]}} - object containing {companies: [{handle <string>, name <string>}, ...]}
      * 
      */
     static async get(options) {
-        //if options obj is empty go ahead and return all results from companies table    
 
+        //if options obj is empty go ahead and return all results from companies table
         if (Object.values(options).every(val=>(!val))) {
             const result = await db.query('SELECT handle, name FROM companies;');
             return {companies: result.rows};
@@ -136,7 +136,7 @@ class Company {
      * 
      * @param {String} handle - unique company identification string
      * 
-     * @returns {Object{Object{String, String, Number, String, String}}} - object containing {company: {handle <string>, name <string>, num_employees <integer>, description <string>, logo_url <string>}}
+     * @returns {Promise{Object{String, String, Number, String, String}}} - object containing {company: {handle <string>, name <string>, num_employees <integer>, description <string>, logo_url <string>}}
      */
     static async getByHandle(handle) {
         try {
@@ -190,7 +190,7 @@ class Company {
      * @param {String} newCo.description - description of company
      * @param {String} newCo.logo_url - url for company's logo
      * 
-     * @returns {Object{Object{String, String, Number, String, String}}} - object containing {company: {handle <string>, name <string>, num_employees <integer>, description <string>, logo_url <string>}}
+     * @returns {Promise{Object{String, String, Number, String, String}}} - object containing {company: {handle <string>, name <string>, num_employees <integer>, description <string>, logo_url <string>}}
      * 
     */
     static async new(newCo) {
@@ -233,7 +233,7 @@ class Company {
      * @param {String} updateObj.description - description of company
      * @param {String} updateObj.logo_url - url for company's logo
      * 
-     * @returns {Object{Object{String, String, Number, String, String}}} - object containing {company: {handle <string>, name <string>, num_employees <integer>, description <string>, logo_url <string>}}
+     * @returns {Promise{Object{String, String, Number, String, String}}} - object containing {company: {handle <string>, name <string>, num_employees <integer>, description <string>, logo_url <string>}}
      * 
      */
     static async update(handle, updateObj) {
@@ -261,7 +261,7 @@ class Company {
      * 
      * @param {String} handle - unique company identification string
      * 
-     * @returns {Object{String}} - object containing {message: "Company deleted"}
+     * @returns {Promise{String}} - object containing {message: "Company deleted"}
      */
     static async delete(handle) {
         try {
