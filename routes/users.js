@@ -30,28 +30,30 @@ router.get('/', authorize, async function(request, response, next) {
  * - username
  * - is_admin
  *
+ * !!! FOR IMPLEMENTED ROUTE SEE ~/routes/auth.js !!!
+ * 
  *      --> {token: token}
 */
-router.post('/', async function(request, response, next) {
-    try {
-        //validate request.body
-        const result = jsonschema.validate(request.body, userSchema);
-        if (!result) {
-          // pass a 400 error to the error-usernamer
-          let listOfErrors = result.errors.map(err => err.stack);
-          let err = new ExpressError(listOfErrors, 400);
-          return next(err);
-        }
-        //at this point, username, first_name, last_name, password, and email have been validated as valid entries
-        request.body.password = await bcrypt.hash(request.body.password, BCRYPT_WORK_FACTOR);
+// router.post('/', async function(request, response, next) {
+//     try {
+//         //validate request.body
+//         const result = jsonschema.validate(request.body, userSchema);
+//         if (!result) {
+//           // pass a 400 error to the error-usernamer
+//           let listOfErrors = result.errors.map(err => err.stack);
+//           let err = new ExpressError(listOfErrors, 400);
+//           return next(err);
+//         }
+//         //at this point, username, first_name, last_name, password, and email have been validated as valid entries
+//         request.body.password = await bcrypt.hash(request.body.password, BCRYPT_WORK_FACTOR);
 
-        const { token } = await User.new(request.body);
-        return response.status(201).json({token});
+//         const { token } = await User.new(request.body);
+//         return response.status(201).json({token});
 
-    } catch(err) {
-        return next(err);
-    }
-});
+//     } catch(err) {
+//         return next(err);
+//     }
+// });
 
 
 /** GET /users/:username

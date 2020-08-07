@@ -40,7 +40,7 @@ router.post('/login', async function(request, response, next) {
 
 
 /** POST /users 
- * create n new user and return JSON Web Token
+ * create new user and return JSON Web Token
  * w/ a payload including values for:
  * - username
  * - is_admin
@@ -68,5 +68,6 @@ router.post('/users', async function(request, response, next) {
         return next(err);
     }
 });
+
 module.exports = router;
 
