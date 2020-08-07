@@ -7,20 +7,20 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { SECRET_KEY } = require('../config');
 
-/** class specification for User object instance, which is a model for 
- * the database table "users". This class defines five attributes,
- * in addition to several methods on the class and object. 
- */
-
+/** class specification for User object*/
 class User {
 
-    /** return instance of db client */
+    /** return instance of db client 
+     * 
+     * @returns {Client} - pg database Client instance
+    */
     static returnDB() {
         return db;
     }
 
     /** Return array of all users.
-     *      --> {users: [{username <string>, first_name <string>, last_name <string>, email <string>}, ...]}
+     * 
+     * @returns {Promise{Object{String, String, String, String}}} - object containing {users: [{username <string>, first_name <string>, last_name <string>, email <string>}, ...]}
      */
     static async get() {
         try {
@@ -36,7 +36,10 @@ class User {
     }
 
     /** given username, return single user
-     *      --> {User: {username <string>, first_name <string>, last_name <integer>, email <string>}}
+     * 
+     * @param {String} username - unique user identification string
+     * 
+     * @returns {Promise{Object{String, String, String, String}}} - object containing {user: {username <string>, first_name <string>, last_name <integer>, email <string>}}
      */
     static async getByUsername(username) {
         try {
@@ -58,7 +61,10 @@ class User {
     }
 
     /** given an integer, function returns a parameterized query string of commensurate length.
-     *     --> '$1, $2, $3, $4, ...' <string>
+     * 
+     * @param {Number} num - number of needed sanitized query string parameters
+     * 
+     * @returns {String} - string like '$1, $2, $3, $4, ...' (if num is >= 4)
     */
     static parameterizedString(num) {
         let string = '';
@@ -72,8 +78,18 @@ class User {
     }
 
     /** given newUser object, create user if info is valid and return JWT
-     *      
-     *      --> {token: token}
+     * 
+     * @param {Object} newUser - information about a new user as a set of key-value pairs
+     * @param {String} newUser.username - unique user identification string
+     * @param {String} newUser.first_name - user first name string
+     * @param {String} newUser.last_name - user last name string
+     * @param {String} newUser.email - user email string
+     * @param {String} newUser.password - user's HASHED password. 
+     * @param {String} newUser.photo_url - url for users profile photo
+     * @param {String} newUser.is_admin - user admin status: boolean value
+     * 
+     * @returns {Promise{Object{String}}} - object containing {token: token <string>}
+     * 
      */
     static async new(newUser) {
 
@@ -105,11 +121,21 @@ class User {
         }
     }
 
-    /** If the passed username exists, update the corresponding User in database 
+    /** If the passed username exists, update the corresponding user in database 
      * with information contained in updateObj. Return object containing data
-     * from the updated User.
+     * from the updated user.
      * 
-     *      --> {User: {username <string>, name <string>, num_employees <integer>, description <string>, logo_url <string>}}
+     * @param {String} uname - unique user identification string
+     * @param {Object} updateObj - object containing fields to be updated in user corresponding to uname param
+     * @param {String} updateObj.username - unique user identification string
+     * @param {String} updateObj.first_name - user first name string
+     * @param {String} updateObj.last_name - user last name string
+     * @param {String} updateObj.email - user email string
+     * @param {String} updateObj.password - user's HASHED password. 
+     * @param {String} updateObj.photo_url - url for users profile photo
+     * @param {String} updateObj.is_admin - user admin status: boolean value
+     * 
+     * @returns {Promise{Object{String, String, String, String}}} - object containing {user: {username <string>, first_name <string>, last_name <string>, email <string>}}
     * 
     */
     static async update(uname, updateObj) {
@@ -134,10 +160,12 @@ class User {
         }
     }
 
-    /** If the passed username exists, delete corresponding User and information from
-     * the database and return an object containing the deleted information.
+    /** If the passed username exists, delete corresponding user and information from
+     * the database and return message confirming deletion.
      * 
-     *      --> {deleted: {User: {username <string>, name <string>, num_employees <integer>, description <string>, logo_url <string>}}}
+     * @param {String} username - unique user identification string
+     * 
+     * @returns {Promise{Object{String}}} - object containing {message: "User deleted"}
      */
     static async delete(username) {
         try {

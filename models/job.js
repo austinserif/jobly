@@ -211,9 +211,9 @@ class Job {
     }
 
 
-    /** If the passed handle exists, update the corresponding company in database 
+    /** If the passed id exists, update the corresponding job in database 
      * with information contained in updateObj. Return object containing data
-     * from the updated company.
+     * from the updated job.
      * 
      * @param {String} jobId - unique job identification integer
      * @param {Object} updateObj - object containing fields to be updated in job corresponding to id param
