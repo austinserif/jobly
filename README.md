@@ -45,25 +45,25 @@ Take a peek in `~/config.js` and you will see two database URLs, one for testing
 Jobly comes with three sets of RESTful endpoints out of the box: `/users`, `/companies`, `/jobs`, aswell as `GET /login` which supports authentication.
 
 ##### authentication
-POST /users
+POST /users\
 POST /login
 
 ##### /users
-GET /users
-GET /users/:username
-PATCH /users/:username
+GET /users\
+GET /users/:username\
+PATCH /users/:username\
 DELETE /users/:username
 
 ##### /companies
-GET /companies
-GET /companies/:handle
-POST /companies
-PATCH /companies/:handle
+GET /companies\
+GET /companies/:handle\
+POST /companies\
+PATCH /companies/:handle\
 DELETE /companies/:handle
 
 ##### /jobs
-GET /jobs
-GET /jobs/:id
-POST /jobs
-PATCH /jobs/:id
+GET /jobs\
+GET /jobs/:id\
+POST /jobs\
+PATCH /jobs/:id\
 DELETE /jobs/:id
