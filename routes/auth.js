@@ -28,7 +28,7 @@ router.post('/login', async function(request, response, next) {
 });
 
 
-/** POST /users 
+/** POST /register 
  * create new user and return JSON Web Token
  * w/ a payload including values for:
  * - username
