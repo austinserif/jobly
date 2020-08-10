@@ -36,7 +36,7 @@ router.post('/login', async function(request, response, next) {
  *
  *      --> {token: token}
 */
-router.post('/users', async function(request, response, next) {
+router.post('/register', async function(request, response, next) {
     try {
         const newUser = request.body;
         const result = jsonschema.validate(newUser, userSchema);
