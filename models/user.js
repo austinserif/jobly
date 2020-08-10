@@ -182,6 +182,42 @@ class User {
             throw err;
         }
     }
+
+    /** Takes an object containing username and password. If credentials match a user in database, return a token
+     * 
+     * @param {Object} credentials - object containing username and password
+     * @param {String} credentials.username - unique user identifier string
+     * @param {String} credentials.password - plain text password to compare
+     * 
+     * @returns {Promise{Object}} - object containing token
+     */
+    static async login(credentials) {
+        try {
+
+            const { username, password } = credentials;
+
+            const result = await db.query(`
+                SELECT password
+                FROM users
+                WHERE username=$1`, [username]);
+
+            const user = result.rows[0];
+
+            if (user) {
+                if (await bcrypt.compare(password, user.password)) {
+                    const token = jwt.sign({username}, SECRET_KEY);
+                    return response.json({token});
+                }
+            }
+
+            throw new ExpressError('Invalid username or password', 400);   
+        } catch(err) {
+            throw(err);
+        }
+
+    
+
+    }
 }
 
 module.exports = User;

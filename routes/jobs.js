@@ -14,7 +14,7 @@ const { authorize, authorizeAdmin } = require('../middleware/route-protection');
 router.post('/', authorizeAdmin, async function(request, response, next) {
     try {
         //validate request.body
-        const result = jsonschema.validate(request.body, jobSchema);
+        const result = jsonschema.validate(request.body, jobSchema); //make middleware
         if (!result) {
           // pass a 400 error to the error-handler
             let listOfErrors = result.errors.map(err => err.stack);

@@ -20,19 +20,8 @@ const { SECRET_KEY, BCRYPT_WORK_FACTOR } = require('../config');
 router.post('/login', async function(request, response, next) {
     try {
         const { username, password } = request.body;
-        const result = await db.query(`
-            SELECT password
-            FROM users
-            WHERE username=$1`, [username]);
-        
-        const user = result.rows[0];
-        if (user) {
-            if (await bcrypt.compare(password, user.password)) {
-                const token = jwt.sign({username}, SECRET_KEY);
-                return response.json({token});
-            }
-        }
-        throw new ExpressError('Invalid username or password', 400);
+        const { token } = User.login({username, password});
+        return response.json({token});
     } catch(err) {
         return next(err);
     }
