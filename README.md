@@ -42,10 +42,10 @@ Take a peek in `~/config.js` and you will see two database URLs, one for testing
 
 #### 4. Endpoints and User-flow
 
-Jobly comes with three sets of RESTful endpoints out of the box: `/users`, `/companies`, `/jobs`, aswell as `GET /login` which supports authentication.
+Jobly comes with three sets of RESTful endpoints out of the box: `/users`, `/companies`, `/jobs`, aswell as `GET /login` and `POST /register` which support authentication and registration.
 
 ##### authentication
-POST /users\
+POST /register\
 POST /login
 
 ##### /users
