@@ -38,19 +38,15 @@ router.post('/login', async function(request, response, next) {
 */
 router.post('/users', async function(request, response, next) {
     try {
-        //validate request.body
-        const result = jsonschema.validate(request.body, userSchema);
+        const newUser = request.body;
+        const result = jsonschema.validate(newUser, userSchema);
         if (!result) {
           // pass a 400 error to the error-usernamer
           let listOfErrors = result.errors.map(err => err.stack);
           throw new ExpressError(listOfErrors, 400);
         }
-        //at this point, username, first_name, last_name, password, and email have been validated as valid entries
-        const salt = await bcrypt.genSalt(Number(BCRYPT_WORK_FACTOR));
-        const hashed = await bcrypt.hash(request.body.password, salt);
-        request.body.password = hashed;
 
-        const { token } = await User.new(request.body);
+        const { token } = await User.new(newUser);
         return response.status(201).json({token});
 
     } catch(err) {

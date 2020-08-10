@@ -77,6 +77,19 @@ class User {
         return string
     }
 
+    /** Take password string and return new hashed password
+     * 
+     * @param {String} password - password string
+     * 
+     * @returns {String} - hashed password string
+     * 
+     */
+    static async hashPassword(password) {
+        const salt = await bcrypt.genSalt(Number(BCRYPT_WORK_FACTOR));
+        const hashed = await bcrypt.hash(password, salt);
+        return hashed;
+    }
+
     /** given newUser object, create user if info is valid and return JWT
      * 
      * @param {Object} newUser - information about a new user as a set of key-value pairs
@@ -93,6 +106,10 @@ class User {
      */
     static async new(newUser) {
 
+        //replace plain text password with hashed password
+        newUser.password = this.hashPassword(newUser.password);
+
+        //filter object entries for defined vals only
         const filteredArr = Object.entries(newUser).filter(function(val) {
             if (val[1]) {
                 return [val[0], val[1]];
