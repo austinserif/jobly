@@ -5,7 +5,7 @@ const ExpressError = require('../helpers/expressError');
 const { sqlForPartialUpdate } = require('../helpers/partialUpdate');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { SECRET_KEY } = require('../config');
+const {BCRYPT_WORK_FACTOR, SECRET_KEY } = require('../config');
 
 /** class specification for User object*/
 class User {
@@ -133,6 +133,7 @@ class User {
             if (err.message === `duplicate key value violates unique constraint "users_pkey"`) {
                 throw new ExpressError(`User with username ${parameterizedArray[0]} already exists`, 400);
             } else {
+                console.error(err);
                 throw new ExpressError(err.message, err.status);
             }
         }
@@ -223,7 +224,7 @@ class User {
             if (user) {
                 if (await bcrypt.compare(password, user.password)) {
                     const token = jwt.sign({username}, SECRET_KEY);
-                    return response.json({token});
+                    return {token};
                 }
             }
 
@@ -231,9 +232,6 @@ class User {
         } catch(err) {
             throw(err);
         }
-
-    
-
     }
 }
 
